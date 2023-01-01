@@ -43,7 +43,7 @@ const Board = (props) => {
         const newMatrix = matrix
         newMatrix[head[0]][head[1]] = moves[move]
         if (prevTail && checkMoveTail()) {
-            
+            console.log(prevTail)
             newMatrix[prevTail[0]][prevTail[1]] = 0
         }
         if (!checkMoveTail()) generateFood()
