@@ -21,6 +21,8 @@ const Board = (props) => {
     const [head, setHead] = useState([Math.floor(board.ROWS / 2), Math.floor(board.COLS / 2)])
     const [tail, setTail] = useState(head)
     const prevTail = usePrevious(tail)
+    const prevHead = usePrevious(head)
+    const [count, setCount] = useState(0)
     const [food, setFood] = useState([10, 15])
     const [game, setGame] = useState("lost")
     const [move, setMove] = useState('ArrowLeft')
@@ -33,53 +35,78 @@ const Board = (props) => {
         }
         if (game === "game") {
             const interval = setInterval(() => {
-                nextBoard();
+                setCount(count => count + 1);
             }, 500)
             return () => clearInterval(interval)
         }
-    }, [game, move]
+    }, [game]
     )
+
     useEffect(() => {
-        const newMatrix = matrix
-        newMatrix[head[0]][head[1]] = moves[move]
-        if (prevTail && checkMoveTail()) {
-            console.log(prevTail)
-            newMatrix[prevTail[0]][prevTail[1]] = 0
-        }
-        if (!checkMoveTail()) generateFood()
-        setMatrix([...newMatrix])
+        if (game === "game") nextBoard()
+    }, [count])
+    useEffect(() => {
+        console.log(matrix, food, head, tail, prevTail)
+    }, [matrix])
+
+    useEffect(() => {
+        console.log(tail, prevTail)
+        setMatrix(curMatrix => {
+            const newMatrix = curMatrix
+            if (!foodIsEaten() && prevTail) {
+                let newTail = null
+                const moveTail = Object.keys(moves).find(key => moves[key] === matrix[tail[0]][tail[1]])
+                if (moveTail!=="None") newTail = nextStep(moveTail, tail, "tail")
+                if (!newTail || (newTail[0]!== prevTail[0] || newTail[1]!==prevTail[1])) newMatrix[prevTail[0]][prevTail[1]] = 0
+            }
+            else if (foodIsEaten()) {
+                setTail([...prevTail])
+                generateFood()
+            }
+            newMatrix[head[0]][head[1]] = moves[move]
+            return [...newMatrix]
+        })
+        // return () => {
+        //     if
+        // }
     }, [head, tail]
     )
+    useEffect(() => {
+        if (matrix) {
+            setMatrix(curMatrix => {
+                const newMatrix = curMatrix
+                newMatrix[head[0]][head[1]] = moves[move]
+                return [...newMatrix]
+            })
+        }
+
+    }, [move, head]
+    )
     function nextBoard() {
-        setTail((curValue) =>{
-            if (true) {
-                let moveTail = Object.keys(moves).find(key => moves[key] === matrix[curValue[0]][curValue[1]])
-                if (curValue[0]===head[0] && curValue[1]===head[1]) moveTail=move
-                return [...nextStep(moveTail, curValue)]
-            }
-            console.log("comidaaaaa")
-            generateFood()
-            return [...curValue]
-        })
-        setHead((curValue) =>{
-            if (checkMoveHead(curValue)) {
-                setGame("lost")
-                return
-            }
-            return [...nextStep(move, curValue)]
-        })
+        if (!foodIsEaten() && tail) {
+            let moveTail = Object.keys(moves).find(key => moves[key] === matrix[tail[0]][tail[1]])
+            if (head[0] === tail[0] && head[1] === tail[1]) moveTail = move
+            const newTail = nextStep(moveTail, tail, "tail")
+            setTail([...newTail])
+        }
+        if (checkHeadCollision(head)) {
+            setGame("lost")
+            return
+        }
+        const nextHead = nextStep(move, head, "head")
+        setHead([...nextHead])
     }
-    function checkMoveTail() {
-        console.log(!(head[0] === food[0] && head[1] === food[1]))
-        return !(head[0] === food[0] && head[1] === food[1])
+    function foodIsEaten() {
+        return head[0] === food[0] && head[1] === food[1]
     }
-    function checkMoveHead(head) {
-        return checkCollision(nextStep(move, head))
+    function checkHeadCollision(head) {
+        // returns True if collision
+        return checkCollision(nextStep(move, head, "head"))
     }
     function checkCollision(point) {
         return (matrix[point[0]][point[1]] !== 0 || !(0 <= point[0] <= board.ROWS) || !(0 <= point[1] <= board.COLS))
     }
-    function nextStep(move, entity) {
+    function nextStep(move, entity, nameEntity = "") {
         switch (move) {
             case "ArrowLeft":
                 return [entity[0], entity[1] - 1]
@@ -90,8 +117,7 @@ const Board = (props) => {
             case "ArrowDown":
                 return [entity[0] + 1, entity[1]]
             default:
-                // return [entity[0], entity[1]]
-                throw new Error(`Move doesn't exists: ${move}`)
+                throw new Error(`Move doesn't exists: ${move} for entity ${nameEntity}, ${entity}`)
         }
     }
     function startGame() {
@@ -103,6 +129,7 @@ const Board = (props) => {
     }
 
     function generateFood() {
+        console.log("generate food")
         setFood([Math.floor(Math.random() * board.ROWS), Math.floor(Math.random() * board.COLS)])
     }
     function toggleGame() {
