@@ -35,22 +35,19 @@ const Board = (props) => {
         }
         if (game === "game") {
             const interval = setInterval(() => {
-                setCount(count => count + 1);
+                nextBoard()
+                // setCount(count => count + 1);
             }, 500)
             return () => clearInterval(interval)
         }
     }, [game]
     )
 
-    useEffect(() => {
-        if (game === "game") nextBoard()
-    }, [count])
-    useEffect(() => {
-        console.log(matrix, food, head, tail, prevTail)
-    }, [matrix])
+    // useEffect(() => {
+    //     if (game === "game") 
+    // }, [count])
 
     useEffect(() => {
-        console.log(tail, prevTail)
         setMatrix(curMatrix => {
             const newMatrix = curMatrix
             if (!foodIsEaten() && prevTail) {
@@ -66,9 +63,6 @@ const Board = (props) => {
             newMatrix[head[0]][head[1]] = moves[move]
             return [...newMatrix]
         })
-        // return () => {
-        //     if
-        // }
     }, [head, tail]
     )
     useEffect(() => {
@@ -80,7 +74,7 @@ const Board = (props) => {
             })
         }
 
-    }, [move, head]
+}, [move]
     )
     function nextBoard() {
         if (!foodIsEaten() && tail) {
